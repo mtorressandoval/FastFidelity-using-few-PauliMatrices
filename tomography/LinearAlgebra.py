@@ -30,18 +30,41 @@ def Process2Choi(Process):
     return Process
 
 
-def LocalProduct(Psi, Operators, Dims=[]):
+def LocalProduct( Psi, Operators , Dims=[] ):
     """
     Calculate the product (A1xA2x...xAn)|psi>
     """
-    sz = Psi
-    if not Dims:
-        Dims = [Operators[k].shape[-1] for k in range(len(Operators))]
-    N = len(Dims)
-    for k in range(N):
-        Psi = ((Operators[k] @ Psi.reshape(Dims[k], -1)).T).flatten()
-    return Psi
+    Psi = np.array( Psi )
+    shape = Psi.shape
+    if len(shape) > 1 :
+        num_vecs = shape[1]
+    else:
+        num_vecs = 1
 
+    if not Dims: 
+        Dims = [ Operators[k].shape[-1] for k in range( len(Operators) ) ]
+    N = len(Dims)
+
+    for k in range(N):
+            Psi  = (( Operators[k]@Psi.reshape(Dims[k],-1) ).transpose(1,0) )
+    return Psi.reshape(num_vecs,-1).transpose(1,0).squeeze() 
+
+# def LocalProduct_cvx( Psi, Operators , Dims=[] ):
+#     """
+#     Calculate the product (A1xA2x...xAn)|psi>
+#     """
+#     shape = Psi.shape
+#     if len(shape) > 1 :
+#         num_vecs = shape[1]
+#     else:
+#         num_vecs = 1
+#     if not Dims: 
+#         Dims = [ Operators[k].shape[-1] for k in range( len(Operators) ) ]
+#     N = len(Dims)
+#     Dim = np.prod(Dims)
+#     for k in range(N):
+#             Psi  = (( Operators[k]@cp.reshape(Psi,(Dims[k],num_vecs*Dim//Dims[k])) ).T )
+#     return cp.reshape( Psi, (num_vecs,Dim) ).T
 
 def InnerProductMatrices(X, B, Vectorized=False):
     """

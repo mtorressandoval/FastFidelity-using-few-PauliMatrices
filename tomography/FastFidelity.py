@@ -26,7 +26,12 @@ class Mean_Direct_Fidelity:
         for j in range(len(ChainSigmaL)):
             W.append("".join(ChainSigmaL[j]))
 
+        Wint = []
+        for j in product([0,1,2,3],repeat=NQ):
+            Wint.append(j)
+
         self.W = W  # List of the form [II,IX, XI,IY,..]
+        self.Wint = Wint
 
     # ----------------------------------------------------------------
     def Expectationvalue(self, j, QuantumState, estimator=Estimator(), shots=1000):
@@ -66,11 +71,11 @@ class Mean_Direct_Fidelity:
         #     chi=(1/np.sqrt(self.d))* np.dot(xc,self.FastTensorProd(A,x))
         #     if truncation and np.sqrt(self.d)*np.abs(chi)<alpha:
         #         Chi.append(0)
-        #     else:
+        #     else: 
         #         Chi.append(chi)
-        Chix = InnerProductMatrices(np.outer(x, xc), self.NQ * [self.Sigmamu]).reshape(
-            -1
-        ) / np.sqrt(self.d)
+        Chix = InnerProductMatrices(np.outer(x, xc), 
+                                    self.NQ * [self.Sigmamu]
+                                    ).reshape(-1) / np.sqrt(self.d)
         if truncation is not None:
             Chix[np.abs(Chix) < truncation] = 0
         return np.array(Chix)
