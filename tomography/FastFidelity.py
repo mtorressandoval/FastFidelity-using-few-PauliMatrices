@@ -129,7 +129,7 @@ class Mean_Direct_Fidelity:
             self._kreduce = kreduce
             for j in set(kreduce):
                 if j not in self.Measures:  # Check if we already measure the operator j
-                    if stop_measuring(self.Measures):
+                    if stop_measuring(self):
                         self.Measures[j] = 0
                     else:
                         self.Measures[j] = self.Expectationvalue(
@@ -144,6 +144,10 @@ class Mean_Direct_Fidelity:
             sums.append(sum)
         sums = np.array(sums).real
         return np.sum(sums) / len(sums)
+
+    @property
+    def Purity(self):
+        return np.sum(np.array(list(self.Measures.values())) ** 2)
 
 
 # -----------------------------------------------------------------
