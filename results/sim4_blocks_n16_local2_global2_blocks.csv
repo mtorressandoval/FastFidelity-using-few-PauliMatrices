@@ -1,2 +1,0 @@
-n,kind,state,start,F_STAB,F_out,ratio,optimal,F_hat,err,search_shots,F_start,iterations
-16,local2,0,blocks,0.7285533905932737,2.604838228128887e-05,3.5753566749689024e-05,False,-0.0112,0.7397533905932737,1234436,0.0028459116820049755,200

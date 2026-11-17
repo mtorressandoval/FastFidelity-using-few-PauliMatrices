@@ -1,84 +1,55 @@
-# FastFidelityEstimation: stabilizer fidelity with Pauli measurements on one copy
+# FastFidelity using few PauliMatrices (work-in-progress)
 
-This repository contains
+This project is based on the algorithm introduced in [Flammia-2011](https://arxiv.org/abs/1104.4695), in companion with the stochastic optimization algorithm cspsa [Gidi-2021](https://arxiv.org/abs/2203.06044).
 
-* `fastfidelity/` – direct fidelity estimation (DFE) for stabilizer targets,
-  without and with a Pauli store, and the **self-guided estimation protocol**
-  that estimates the stabilizer fidelity
-  F_STAB(ρ) = max_φ ⟨φ|ρ|φ⟩ of an unknown state ρ (pure or mixed) using only
-  measurements of Pauli strings on single copies.
-* `experiments/` – the scripts that produce every CSV and figure in `results/`
-  (E1–E5 of the paper, n ≤ 8), plus `experiments/large/` with prepared runs for
-  large n (stabilizer mixtures up to n = 100, Aer MPS and GPU samplers).
-* `paper/` – the manuscript (REVTeX 4.2) and its bibliography.
-* `tests/` – exact, statistical and control tests (`pytest`).
-* `prototypes/` – the original prototypes used as reference (`vecinos_con_almacen.py`,
-  `estabilizador_cercano.py`, `ejemplo_estado_denso.py`) and their output.
-* `tomography_sgqt/` – the previous tomography code (self-guided quantum
-  tomography), frozen and still working; see its README.
-* `docs/` – research plan, writing profile and development notes.
+The algorithm aims to reconstruct an unknown state $\sigma$ by performing a minimal number of measurements. To achieve this, we use a known pure state $\rho$ as a reference. The fidelity $F$ is used as an indicator of the closeness between these two states. By maximizing the fidelity we can reproduce $\sigma$.
 
-## Installation
+Our algorithm consist of three steps:
+* Random Average over the Hilbert space 
+  * Approximate the Fidelity using a MonteCarlo method.
+  * Maximize the fidelity using cspsa.
+  *  XX
 
-```bash
-pip install -r requirements.txt        # qiskit 2.6.2, qiskit-aer 0.18.2
-pytest -q                               # ~5 min (FF_STAT_REPS=1000 for a quick run)
+In the following lines I will describe each block of the algorithm.
+## Fidelity using few Pauli Matrices
+Let's consider two density states $\rho$ and $\sigma$. Here $\rho$ is a known pure state while $\sigma$ is the a quantum state that has to be reconstruct. The fidelity between these two states is given by
+$$F(\rho,\sigma)=\mathrm{tr}(\sigma\rho). $$
+For our purposes, it is convenient to expand our states $\rho$ and $\sigma$ in terms of Pauli-operators $W_{k}$ with $k=1,..,d^2$. In this basis, the fidelity takes the form
+$$F(\rho,\sigma)=\sum_{k=1}^{d^2}\chi_{\rho}(k)\chi_{\sigma}(k), $$
+where $\chi_{\rho}(k)=\mathrm{tr}(\rho W_{k}/\sqrt{d})$. Since $P(k)=\chi_{\rho}(k)^2$ is a probability distribution, we can estimate the fidelity $F$, using for example, a MonteCarlo method
+$$F(\rho,\sigma)\approx\sum_{\tilde{k}}\frac{\chi_{\sigma}(\tilde{k})}{\chi_{\rho}(\tilde{k})},$$ 
+where the values of $\tilde{k}$ are chosen randomly with respect the probability distribution $P(k)$. This algorithm show us that we can estimate the fidelity by just performing few measures on the quantum state $\sigma$.
+## Fast Tensor Product
+In order to obtain the probability distribution $P(k)$ we need to perform $d^2$ measures on the state $\rho$. For a system of $n_{q}$ qubits, the operators $W_{k}$ will be equal to the tensor product of $n_{q}$ matrices of $2\times2$. For a large number of qubits, this operation is highly expensive and the naive algorithm will take too time. We can accelerate the action of the tensor product by using the following relation
+$$(A\otimes B)X=AXB^{T}$$
+where the matrix $A$, $B$ and $X$ are of dimension $m\times m$, $n\times n$ and $m\times n$ respectively. Using the previous relation we can compute the action of chain of operators acting on a vector recursively. This is implmented via the function FastTensorProd
+
+``` python
+
+def FastTensorProd(A,x):
+#Given a list of matrices A = [A1,...,ANQ] and a vector x,
+#return (A1 o ... o ANQ)x where o is the Kronecker product
+    L=len(x)
+    x=x.reshape(L//2, 2)
+    for a in range(len(A)-1):
+        x=x@A[-a-1].T
+    x=x.reshape(2,L//2)
+    x=A[0]@x
+    return x.flatten()
 ```
+Using this we can compute the projections along the Pauli-basis. This is done by the function Chi
 
-## Minimal example
-
-```python
-import numpy as np
-from fastfidelity import SpectrumBackend, StabTableau, self_guided_estimation
-from fastfidelity.reference import near_stabilizer
-
-rng = np.random.default_rng(1)
-psi, phi = near_stabilizer(6, 0.9, rng)            # unknown state, F_STAB = 0.9
-backend = SpectrumBackend(psi)                     # simulates Pauli measurements
-res = self_guided_estimation(backend, start=None, store="store", seed=7)
-print(res.F_hat, res.ci, res.certified, res.search_shots)
+``` python
+def Chi(x,truncation=False):
+#Given a vector x, returns the normalize 
+        xc=x.conjugate()
+        alpha=(1/(self.d)**(0.5))
+        Chi = []
+        for A in product(self.Sigmamu, repeat=self.NQ):
+            chi=(1/np.sqrt(self.d))* np.dot(xc,self.FastTensorProd(A,x))
+            if truncation and  np.sqrt(self.d)*np.abs(chi)<alpha:
+                Chi.append(0)
+            else:
+                Chi.append(chi)     
+        return np.array(Chi)
 ```
-
-`store=None` gives the DFE without store; `store="store"` the DFE with store
-(stratified estimator: stored Paulis of the group enter deterministically, the
-rest of the group is sampled); `substrings=True` lets every shot of a string
-feed all its substrings.  `fastfidelity.blocks.hierarchical_search` gives a
-warm start from 2^k blocks of at most 8 qubits (`FrameBackend` defines the blocks
-in the frame of a known Clifford circuit).  `local_restart=k` builds, from the stored substrings of weight <= k, a
-candidate with k-local generators and jumps to it when it improves (exploratory,
-off by default).  By default the protocol confirms sign flips whose
-advantage is below the multiple-comparison margin (`confirm_flips=True`); for
-large n use `N=125*n` and `refresh_on_retry=True`.  Backends: `SpectrumBackend` (dense ρ, n ≲ 11),
-`StabilizerMixtureBackend` (analytic, hundreds of qubits),
-`TDopedBackend` and `DepolarizedStabilizerBackend` (exact, large n),
-`QiskitSamplerBackend` (Qiskit `StatevectorSampler` or Aer `SamplerV2` with
-statevector, density-matrix, MPS or GPU methods).
-
-## Reproducing the paper
-
-```bash
-cd experiments
-python sim6_families.py "T-doped shallow" 10 15    # Fig. 2 (one call per family and n)
-python sim2_extension.py 9 15 T-doped:1,2,3 --dense         # Fig. 3, n = 9 and 10
-python sim2_extension.py 9 15 depolarized:0.1,0.3,0.5 --dense
-python sim2_extension.py 10 15 T-doped:1,2,3 --dense
-python sim2_extension.py 10 15 depolarized:0.1,0.3,0.5 --dense
-python sim4_blocks.py 10 3 local2,global2,random                 # block warm start (exploratory, not in the paper)
-python sim4_blocks.py 10 3 random frame
-python sim4_blocks.py 16 3 local2,global2 blocks --scaled
-python sim4_blocks.py 16 3 random frame --scaled
-python sim5_local_restart.py 10 10 neighbors,random\ pairs,deep\ random local,plain   # local restart (exploratory)
-python summary_local_restart.py                    # results/sim5_summary.txt, fig_local_restart.png
-python worked_examples_fig.py      # worked examples of Appendix E (Fig. 3)
-python fig1_schematic.py; NMAX=14 python make_figures.py   # Figs. 1-2 + results/summary.txt
-cd ../paper && latexmk -pdf main.tex
-```
-
-`experiments/archive/` keeps the first round of simulations (store savings with a
-start close to the optimum, success versus tau and p for n <= 5, dense states and
-an ablation of the parameters) and the runs up to 16 qubits started close to
-the optimum with N = 125 n (`archive/sim3_large.py`); their CSV files are in
-`results/archive/`.
-All randomness is seeded; on one CPU core the experiments take about one hour.
-The main numbers are collected in `results/summary.txt`; the full test log is
-`results/pytest_output.txt`.
