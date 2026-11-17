@@ -178,3 +178,12 @@ poetry.toml
 
 # LSP config files
 pyrightconfig.json
+
+# LaTeX
+paper/*.aux
+paper/*.log
+paper/*.blg
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*Notes.bib

@@ -1,0 +1,33 @@
+Comprobaciones: fidelidades por grupo = vectores de estado; vecinos con solapamiento 1/2. OK
+
+n=4, tau=0.9, arranque aleatorio (15 estados, N=1000 disparos por estimación)
+  sin almacén: F/F_STAB 1.000, óptimo 100%, disparos medios     31400
+  con almacén: F/F_STAB 1.000, óptimo 100%, disparos medios      6566
+  sin almacén + 2 reintentos: F/F_STAB 1.000, óptimo 100%, disparos medios    109400
+  con almacén + 2 reintentos: F/F_STAB 1.000, óptimo 100%, disparos medios     21397
+  ahorro de disparos (con almacén frente a sin almacén): 4.8x
+  ahorro de disparos (con almacén + 2 reintentos frente a sin almacén + 2 reintentos): 5.2x
+
+n=4, Haar, arranque aleatorio (15 estados, N=1000 disparos por estimación)
+  sin almacén: F/F_STAB 0.964, óptimo 53%, disparos medios     41333
+  con almacén: F/F_STAB 0.953, óptimo 27%, disparos medios      6676
+  sin almacén + 2 reintentos: F/F_STAB 0.987, óptimo 67%, disparos medios    155133
+  con almacén + 2 reintentos: F/F_STAB 0.967, óptimo 60%, disparos medios     21036
+  ahorro de disparos (con almacén frente a sin almacén): 6.2x
+  ahorro de disparos (con almacén + 2 reintentos frente a sin almacén + 2 reintentos): 7.4x
+
+n=6, tau=0.9, arranque a 3 pasos (10 estados, N=1000 disparos por estimación)
+  sin almacén: F/F_STAB 1.000, óptimo 100%, disparos medios     32500
+  con almacén: F/F_STAB 1.000, óptimo 100%, disparos medios      6899
+  sin almacén + 2 reintentos: F/F_STAB 1.000, óptimo 100%, disparos medios    110500
+  con almacén + 2 reintentos: F/F_STAB 1.000, óptimo 100%, disparos medios     23297
+  ahorro de disparos (con almacén frente a sin almacén): 4.7x
+  ahorro de disparos (con almacén + 2 reintentos frente a sin almacén + 2 reintentos): 4.8x
+
+n=8, tau=0.9, arranque a 3 pasos (8 estados, N=1000 disparos por estimación)
+  sin almacén: F/F_STAB 1.000, óptimo 100%, disparos medios     34250
+  con almacén: F/F_STAB 1.000, óptimo 100%, disparos medios      7034
+  sin almacén + 2 reintentos: F/F_STAB 1.000, óptimo 100%, disparos medios    112250
+  con almacén + 2 reintentos: F/F_STAB 1.000, óptimo 100%, disparos medios     25127
+  ahorro de disparos (con almacén frente a sin almacén): 4.9x
+  ahorro de disparos (con almacén + 2 reintentos frente a sin almacén + 2 reintentos): 4.5x
